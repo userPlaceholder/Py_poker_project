@@ -1,47 +1,38 @@
-# A poker-type game created as part of a Python course
-# with the purpose to utilise classes 
 
 from classes import *
-
-
-# bob = Player("Bob")
-
-#for i in range(0, 5):
-#    bob.draw(deck)
-
-#bob.show_hand()
-
-# FUNCTION SPLIT:
-# X Main, calls functions
-# X Input, takes input, returns list of players
-# X Create deck, creates and shuffles deck
-# X Deal, assign player hands
-# * Calculate, calculate best hand for each player
-# Itertools: https://www.geeksforgeeks.org/itertools-combinations-module-python-print-possible-combinations/
-# * Play, plays best hand
 
 def main():
     main_players_lst = user_input_players()
     main_deck = create_and_shuffle_deck()
-    #print(main_players_lst) # For testing
-    #print(main_deck.show()) # For testing
+    # print(main_players_lst) # For testing
+    # print(main_deck.show()) # For testing
     main_players_with_hands = deal(main_players_lst, main_deck)
-    
-    # For testing:
-    #for player in main_players_lst:
-    #    print("X")
-    #    print(player.show_hand())
-    #    print("Y")
 
-    players_top_hands = evaluate_best_hand(main_players_with_hands)
+    evaluate_best_hand(main_players_with_hands)
 
+    winner_or_tied_winners = play(main_players_with_hands)
+
+    if type(winner_or_tied_winners) == Player:
+        winner = winner_or_tied_winners
+        print(f"""
+            The winner is:  * * * {winner.show()} * * *
+            The winning hand is:  * {winner.show_hand()} *
+            With: {winner.hand_name()}
+            """)
+    else:
+        print("The game is tied between:")
+        tied_winners = winner_or_tied_winners
+        for player in tied_winners:
+            print(f"""
+                {player.show()}: {player.show_hand()}, {player.hand_name()}
+                """)
 
 
 def user_input_players():
     players_lst = []
     
-    # number_of_players = None
-    number_of_players = 7 # Change back!!!
+    number_of_players = None
+    # number_of_players = 7 # For testing
 
     while number_of_players == None:
         user_input = input("Select number of players (1-7): ")
@@ -61,84 +52,177 @@ def user_input_players():
         player = Player("Player " + (str(len(players_lst) + 1)))
         #print(player.show_hand())
         players_lst.append(player)
-        #print(player) # For testing
-    #for item in players_lst:
-    #    print(item.show_hand())
     return players_lst
+
 
 def create_and_shuffle_deck():
     deck = Deck()
     deck.shuffle()
     return deck
 
+
 def deal(players_lst, shuffled_deck):
     for player in players_lst:
         for num in range(0, 5): # Currently deals 5 cards per player
             player.draw(shuffled_deck)
-    # For testing:
-    #for player in players_lst:
-    #    print("Start")
-    #    player.show_hand()
-    #    print("Stop")
     
     return players_lst
 
+
 def evaluate_best_hand(players_with_hands):
-    #for player in players_with_hands:
-    #for card in player.hand:
-    #    print(card)
-    #print("END")
+    # player_counter = 0 # For testing
     
     for player in players_with_hands:
-        # Keeps track of player numbers: (Necessary?) 
-        player_counter = 0
-        player_counter += 1
+        
+        #player_counter += 1 # For testing
+        #print(f"Player counter top: {player_counter}") # For testing
 
-        def evaluate_flush():
-            # suits = ["\u2663", "\u2663", "\u2663", "\u2663", "\u2663"] # For testing
-            suits = [card.suit for card in player.hand]
+        suits = [card.suit for card in player.hand]
+        values = [card.value for card in player.hand]
+        # suits = ["\u2663", "\u2663", "\u2663", "\u2663", "\u2663"] # For testing
+        # values = [2, 3, 6, 12, 5] # For testing
+
+
+        def evaluate_flush(suits):
             return suits.count(suits[0]) == len(suits)
         
-        def evaluate_straight():
-            values = [card.value for card in player.hand]
-            # values = [10, 8, 9, 11, 7] # For testing
-            values.sort()
-            # print(values) # For testing
-            # print(list(range(values[0], values[0] + 5))) # For testing
 
-            if values == list(range(values[0], values[0] + 5)):
+        def evaluate_straight(values):
+            temp_values = values.copy()
+            temp_values.sort()
+            
+            if temp_values == list(range(temp_values[0], temp_values[0] + 5)):
                 return True
             
             else:
-                if values == [2, 3, 4, 5, 14]:
+                if temp_values == [2, 3, 4, 5, 14]:
                     return True
                 return False
         
-        def evaluate_four_of_a_kind():
-            pass
-    
-    flush = evaluate_flush() # Working!
-    straight = evaluate_straight() # Working!
-    four = evaluate_four_of_a_kind()
-    print(four)
-    
+        
+        def evaluate_four_of_a_kind(values):
+            # print(values) # For testing
+            temp_values = values.copy()
+            for value in temp_values:
+                if temp_values.count(value) == 4:
+                    return True
+                else:
+                    return False
+                
 
-    # Checks:
-    # O Straight flush
-    # O Four of a kind
-    # O Full house 
-    # X Flush
-    # X Straight
-    # O Three of a kind
-    # O Two pairs
-    # O Pair
-    # O High card
-
+        def evaluate_full_house(values):
+            temp_values = values.copy()
+            three_value = [value for value in temp_values if temp_values.count(value) == 3]
+            if len(three_value) == 3:
+                for value in three_value:
+                    temp_values.remove(value)
+                if len(temp_values) == 2 and temp_values[0] == temp_values[1]:
+                    return True
+                else:
+                    return False
+            else:
+                return False
             
 
+        # Will return True even if full house, but not four-of-a-kind.
+        def evaluate_three_of_a_kind(values):
+            temp_values = values.copy()
+            three_value = [value for value in temp_values if temp_values.count(value) == 3]
+            if len(three_value) == 3:
+                return True
+            else:
+                return False
+            
+
+        def evaluate_two_pairs(values):
+            temp_values = values.copy()
+            pairs = [value for value in temp_values if temp_values.count(value) == 2]
+            if len(pairs) == 4:
+                return True
+            else:
+                return False
+            
+
+        # Will return True even if full house, but not four-of-a-kind.
+        def evaluate_one_pair(values):
+            temp_values = values.copy()
+            # print(values)  # For testing
+            pairs = [value for value in temp_values if temp_values.count(value) == 2]
+            # print(pairs) # For testing
+            if len(pairs) == 2:
+                return True
+            else:
+                return False
+            
+
+        flush = evaluate_flush(suits)
+        straight = evaluate_straight(values)
+        four_of_a_kind = evaluate_four_of_a_kind(values)
+        full_house = evaluate_full_house(values) 
+        three_of_a_kind = evaluate_three_of_a_kind(values)
+        two_pairs = evaluate_two_pairs(values)
+        one_pair = evaluate_one_pair(values)
+
+        # Selects best hand according to point system where:
+        # 10 pts  Straight flush
+        # 9 pts   Four of a kind
+        # 8 pts   Full house
+        # 7 pts   Flush
+        # 6 pts   Straight
+        # 5 pts   Three of a kind
+        # 4 pts   Two pair
+        # 3 pts   Pair
+        # 2 pts   Nothing / High card
+        
+        if straight and flush:
+            player.hand_value = 10
+        elif four_of_a_kind:
+            player.hand_value = 9
+        elif full_house:
+            player.hand_value = 8
+        elif flush:
+            player.hand_value = 7
+        elif straight:
+            player.hand_value = 6
+        elif three_of_a_kind:
+            player.hand_value = 5
+        elif two_pairs:
+            player.hand_value = 4
+        elif one_pair:
+            player.hand_value = 3
+        else:
+            player.hand_value = 2
+        
+    
+def play(main_players_with_hands):
+    top_hand_value = 0
+    hand_values = []
 
 
+    def tie(players, top_hand_value):
+        # print(f"Top: {top_hand_value}") # For testing
+        tied_players = []
+        for player in players:
+            # print(f"{player.show()}: {player.show_hand_value()}") # For testing
+            if player.show_hand_value() == top_hand_value:
+                tied_players.append(player)
+        
+        return tied_players
 
+    
+    for player in main_players_with_hands:
+        hand_values.append(player.hand_value)
 
+    hand_values.sort()
+    top_hand_value = hand_values[-1]
+    
+    if hand_values.count(top_hand_value) > 1:
+        winners = tie(main_players_with_hands, top_hand_value)
+        return winners
+    else:
+        for player in main_players_with_hands:
+            if player.hand_value == top_hand_value:
+                return player
 
+    
 main()
